@@ -21,7 +21,7 @@ router.post("/", auth, async (req, res) => {
   res.json(note);
 });
 
-// List all notes for tenant
+// List all notes
 router.get("/", auth, async (req, res) => {
   const { tenantId } = req.user;
   const notes = await Note.find({ tenantId }).populate({

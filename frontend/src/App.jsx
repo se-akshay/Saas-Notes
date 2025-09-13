@@ -46,7 +46,6 @@ function App() {
   return (
     <>
       <NotesDashboard token={token} user={user} onLogout={handleLogout} />
-      <InviteUser token={token} user={user} />
     </>
   );
 }
