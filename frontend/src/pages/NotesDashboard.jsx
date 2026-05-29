@@ -11,7 +11,9 @@ export default function NotesDashboard({ token, user, onLogout }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [noteLimitReached, setNoteLimitReached] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState("free");
   const [upgrading, setUpgrading] = useState(false);
+  const [reverting, setReverting] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -29,6 +31,7 @@ export default function NotesDashboard({ token, user, onLogout }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       const plan = tenantRes.data.plan;
+      setCurrentPlan(plan);
       setNoteLimitReached(plan === "free" && res.data.length >= 3);
     } catch (err) {
       setError("Failed to fetch notes");
@@ -50,7 +53,7 @@ export default function NotesDashboard({ token, user, onLogout }) {
         { title, content },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       setTitle("");
       setContent("");
@@ -84,13 +87,31 @@ export default function NotesDashboard({ token, user, onLogout }) {
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       await fetchNotes();
     } catch (err) {
       setError("Upgrade failed");
     }
     setUpgrading(false);
+  };
+
+  const handleRevert = async () => {
+    setReverting(true);
+    setError("");
+    try {
+      await axios.post(
+        `${API_URL}/tenants/${user.tenant}/revert`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      await fetchNotes();
+    } catch (err) {
+      setError("Revert failed");
+    }
+    setReverting(false);
   };
 
   const startEdit = (note) => {
@@ -112,7 +133,7 @@ export default function NotesDashboard({ token, user, onLogout }) {
       await axios.put(
         `${API_URL}/notes/${id}`,
         { title: editTitle, content: editContent },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       cancelEdit();
       fetchNotes();
@@ -139,6 +160,7 @@ export default function NotesDashboard({ token, user, onLogout }) {
               <p className="text-xs text-slate-500">
                 {user.email} • {user.role} • Tenant:{" "}
                 <span className="font-medium">{user.tenant}</span>
+                {" "}• Plan: <span className="font-medium capitalize">{currentPlan}</span>
               </p>
             </div>
           </div>
@@ -156,6 +178,15 @@ export default function NotesDashboard({ token, user, onLogout }) {
                   </button>
                 )}
               </div>
+            )}
+            {user.role === "admin" && currentPlan === "pro" && (
+              <button
+                onClick={handleRevert}
+                disabled={reverting}
+                className="inline-flex items-center gap-2 rounded-md bg-orange-600 px-4 py-2 text-white hover:bg-orange-700 shadow-sm disabled:opacity-50"
+              >
+                {reverting ? "Reverting..." : "Revert to Basic"}
+              </button>
             )}
             {user.role === "admin" && (
               <button

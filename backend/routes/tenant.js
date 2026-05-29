@@ -19,7 +19,20 @@ router.post("/:slug/upgrade", auth, async (req, res) => {
   const tenant = await Tenant.findOneAndUpdate(
     { slug: req.params.slug },
     { plan: "pro" },
-    { new: true }
+    { new: true },
+  );
+  if (!tenant) return res.status(404).json({ error: "Tenant not found" });
+  res.json({ success: true, tenant });
+});
+
+// Revert endpoint (Admin only)
+router.post("/:slug/revert", auth, async (req, res) => {
+  if (req.user.role !== "admin")
+    return res.status(403).json({ error: "Forbidden" });
+  const tenant = await Tenant.findOneAndUpdate(
+    { slug: req.params.slug },
+    { plan: "free" },
+    { new: true },
   );
   if (!tenant) return res.status(404).json({ error: "Tenant not found" });
   res.json({ success: true, tenant });
